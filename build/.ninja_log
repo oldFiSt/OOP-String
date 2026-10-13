@@ -1,0 +1,6 @@
+# ninja log v7
+3	438	8135779522707476	CMakeFiles/my_str.dir/main.cpp.obj	2217943ac1c294ec
+19	716	8135779522867464	CMakeFiles/my_str.dir/Stroka.cpp.obj	e54958f54be4dfc2
+716	837	8135779529837480	my_str.exe	87d61f7ad09c3319
+17	499	8135779794603186	CMakeFiles/my_str.dir/main.cpp.obj	2217943ac1c294ec
+499	619	8135779799423022	my_str.exe	87d61f7ad09c3319

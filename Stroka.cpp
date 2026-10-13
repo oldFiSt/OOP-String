@@ -1,4 +1,7 @@
 #include "Stroka.h"
+#include <algorithm>
+#include <iostream>
+#include <fstream>
 
 Stroka::Stroka()
 {
@@ -29,14 +32,15 @@ Stroka::Stroka(const char *source)
 Stroka::~Stroka()
 {
 
+	delete[] text;
+
 	for (int i = 0; i < words.size(); i++)
 	{
 		delete[] words[i].word;
 	}
-
-	words.clear();
 }
 
+// отделение слов в строке
 void Stroka::change_Words()
 {
 	wordStats.clear();
@@ -78,8 +82,16 @@ void Stroka::change_Words()
 	}
 }
 
+// создание слов из сохраненных значений
 void Stroka::create_Words()
 {
+	for (int i = 0; i < words.size(); i++)
+	{
+		delete[] words[i].word;
+	}
+
+	words.clear();
+
 	for (int n = 0; n < wordStats.size(); n++)
 	{
 		int start = wordStats[n].first;
@@ -104,6 +116,7 @@ void Stroka::create_Words()
 	}
 }
 
+// поиск подстроки
 int Stroka::research_Words(const char *sub, int length_sub)
 {
 
@@ -128,4 +141,191 @@ int Stroka::research_Words(const char *sub, int length_sub)
 	}
 
 	return -1;
+}
+
+//
+void Stroka::count_WordStats()
+{
+	std::vector<WordInfo> uniqueWords;
+
+	for (int i = 0; i < words.size(); i++)
+	{
+		bool found = false;
+
+		for (int j = 0; j < uniqueWords.size(); j++)
+		{
+			bool same = true;
+			int k = 0;
+
+			while (words[i].word[k] != '\0' ||
+						 uniqueWords[j].word[k] != '\0')
+			{
+
+				char a = words[i].word[k];
+				char b = uniqueWords[j].word[k];
+
+				if (a >= 'A' && a <= 'Z')
+				{
+					a += 32;
+				}
+
+				if (b >= 'A' && b <= 'Z')
+				{
+					b += 32;
+				}
+
+				if (a != b)
+				{
+					same = false;
+					break;
+				}
+
+				k++;
+			}
+
+			if (same)
+			{
+				uniqueWords[j].count++;
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			WordInfo info;
+
+			int len = 0;
+
+			while (words[i].word[len] != '\0')
+			{
+				len++;
+			}
+
+			info.word = new char[len + 1];
+
+			for (int k = 0; k < len; k++)
+			{
+				info.word[k] = words[i].word[k];
+			}
+
+			info.word[len] = '\0';
+
+			info.count = 1;
+			info.firstPosition = words[i].firstPosition;
+
+			uniqueWords.push_back(info);
+		}
+	}
+
+	for (int i = 0; i < words.size(); i++)
+	{
+		delete[] words[i].word;
+	}
+
+	words.clear();
+
+	words = uniqueWords;
+}
+
+int Stroka::count_Words()
+{
+	int n = 0;
+
+	for (int i = 0; i < words.size(); i++)
+	{
+		n += words[i].count;
+	}
+
+	return n;
+}
+
+void Stroka::print_Words(SortType type)
+{
+	std::vector<WordInfo> temp = words;
+
+	if (type == ALPHABET)
+	{
+		std::sort(temp.begin(), temp.end(),
+							[](const WordInfo &a, const WordInfo &b)
+							{
+								int i = 0;
+
+								while (a.word[i] != '\0' && b.word[i] != '\0')
+								{
+									if (a.word[i] < b.word[i])
+										return true;
+
+									if (a.word[i] > b.word[i])
+										return false;
+
+									i++;
+								}
+
+								return a.word[i] == '\0' && b.word[i] != '\0';
+							});
+	}
+
+	else if (type == FIRST_POSITION)
+	{
+		std::sort(temp.begin(), temp.end(),
+							[](const WordInfo &a, const WordInfo &b)
+							{
+								return a.firstPosition < b.firstPosition;
+							});
+	}
+
+	else if (type == BY_COUNT)
+	{
+		std::sort(temp.begin(), temp.end(),
+							[](const WordInfo &a, const WordInfo &b)
+							{
+								return a.count > b.count;
+							});
+	}
+
+	for (int i = 0; i < temp.size(); i++)
+	{
+		std::cout << temp[i].word
+							<< " - "
+							<< temp[i].count
+							<< '\n';
+	}
+}
+
+void Stroka::analyze()
+{
+	change_Words();
+	create_Words();
+	count_Words();
+}
+
+bool Stroka::loadFromFile(const char *filename)
+{
+	std::ifstream file(filename);
+
+	if (!file)
+	{
+		return false;
+	}
+
+	// узнаём размер файла
+	file.seekg(0, std::ios::end);
+	int size = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	// удаляем старый текст
+	delete[] text;
+
+	length = size;
+	text = new char[length + 1];
+
+	// читаем весь файл
+	file.read(text, length);
+
+	text[length] = '\0';
+
+	file.close();
+
+	return true;
 }
